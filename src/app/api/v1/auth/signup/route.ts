@@ -2,61 +2,67 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
-// Handle CORS Preflight
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
+// Request Body-এর টাইপ ইন্টারফেস
+interface SignupRequestBody {
+  name?: string;
+  email?: string;
+  password_hash?: string;
+  role?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password_hash, role = 'user', metadata = {} } = await request.json();
+    // request.json() কে explicit type casting করা হয়েছে
+    const body = (await request.json()) as SignupRequestBody;
+    const { name, email, password_hash, role = 'user', metadata = {} } = body;
 
     if (!name || !email || !password_hash) {
       return Response.json(
-        { success: false, error: 'Missing required fields: name, email, or password_hash' },
-        { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } }
+        { error: 'Missing required fields: name, email, password_hash' },
+        { status: 400 }
       );
     }
 
-    const env = getRequestContext().env;
-    const db = env.DB;
+    const myDb = getRequestContext().env.DB;
 
-    // Check if user exists
-    const existingUser = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
+    // ১. চেক করা ইউজার আগে থেকে আছে কিনা
+    const existingUser = await myDb
+      .prepare('SELECT id FROM users WHERE email = ?1')
+      .bind(email)
+      .first();
+
     if (existingUser) {
       return Response.json(
-        { success: false, error: 'User already exists' },
-        { status: 409, headers: { 'Access-Control-Allow-Origin': '*' } }
+        { error: 'User with this email already exists' },
+        { status: 409 }
       );
     }
 
-    const userId = crypto.randomUUID();
+    // ২. নতুন ইউজার ইনসার্ট করা
+    const id = crypto.randomUUID();
     const metadataString = JSON.stringify(metadata);
 
-    // Insert user into central DB
-    await db.prepare(
-      'INSERT INTO users (id, name, email, password_hash, role, metadata) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(userId, name, email, password_hash, role, metadataString).run();
+    await myDb
+      .prepare(
+        'INSERT INTO users (id, name, email, password_hash, role, metadata) VALUES (?1, ?2, ?3, ?4, ?5, ?6)'
+      )
+      .bind(id, name, email, password_hash, role, metadataString)
+      .run();
 
     return Response.json(
       {
-        success: true,
-        message: 'User registered successfully',
-        data: { id: userId, name, email, role }
+        message: 'User created successfully',
+        user: { id, name, email, role }
       },
-      { status: 201, headers: { 'Access-Control-Allow-Origin': '*' } }
+      { status: 201 }
     );
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Internal Server Error';
     return Response.json(
-      { success: false, error: err.message || 'Internal Server Error' },
-      { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
+      { error: errorMessage },
+      { status: 500 }
     );
   }
 }
