@@ -1,0 +1,30 @@
+{
+  "name": "database",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "deploy": "npm run pages:build && wrangler deploy",
+    "db:push": "wrangler d1 execute flytripvisa-db --remote --file=./schema.sql",
+    "db:local": "wrangler d1 execute flytripvisa-db --local --file=./schema.sql"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.0",
+    "@cloudflare/workers-types": "^4.20240806.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.2",
+    "@types/react": "^18.3.3",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.60.0"
+  }
+}
