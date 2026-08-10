@@ -2,7 +2,6 @@ import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
-// Request Body-এর টাইপ ইন্টারফেস
 interface SignupRequestBody {
   name?: string;
   email?: string;
@@ -13,7 +12,6 @@ interface SignupRequestBody {
 
 export async function POST(request: Request) {
   try {
-    // request.json() কে explicit type casting করা হয়েছে
     const body = (await request.json()) as SignupRequestBody;
     const { name, email, password_hash, role = 'user', metadata = {} } = body;
 
