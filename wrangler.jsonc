@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "database",
+  "name": "flytripvisa-database",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-08-10",
   "compatibility_flags": [
@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "flytripvisa-db",
-      "database_id": "YOUR_ACTUAL_D1_DATABASE_ID"
+      "database_id": "00000007-00000000-000050c3-4c9bb51cd629a579e6e6425eb05dad47"
     }
   ]
 }
